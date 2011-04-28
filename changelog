@@ -1,0 +1,17 @@
+BabaJS Changelog
+================
+
+Version 1.0.1
+-------------
+* fixed a bug in _ensureLocal - if the totalCount==0 then we return immidiatly
+* add a method addTemplate - allowing developer to add one template at a time
+* added a private _log method
+* added a private _stringify method - this allows for browsers that have window.JSON to declare objects and array in code tags. For older browsers it is recomended to include a JSON lib to the project.
+* fixed a bug in _compile - code tags that didn't had space between the tag and the code were not parsed correctly. i.e: <%return "a"%> 
+* fixed a bug in _findVar - i remove code inside of (...) in var declerations. for example, var a=fn(q,w),r=4; produced vars=[a,w,r] so now it produce vars=[a,r]
+
+Version 1.0.2
+-------------
+* updated AddTemplate method - if we already have the template we ignore the command.
+* fixed bug with varriable and stacks in _evalLoopTag and _evalConditionTag - forgot to add the _stringify method.
+* fixed a bug in _compile - had a bug that i didn't handle properly the ending tag of <%ENDIF%> and <%ENDLOOP%>
