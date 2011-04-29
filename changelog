@@ -15,3 +15,7 @@ Version 1.0.2
 * updated AddTemplate method - if we already have the template we ignore the command.
 * fixed bug with varriable and stacks in _evalLoopTag and _evalConditionTag - forgot to add the _stringify method.
 * fixed a bug in _compile - had a bug that i didn't handle properly the ending tag of <%ENDIF%> and <%ENDLOOP%>
+
+Version 1.0.3
+-------------
+* fixed a bug with variable declerations. added the _stack decleration on the top of the library. 
