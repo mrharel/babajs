@@ -1,11 +1,11 @@
 /**
  * @fileOverview This is the implementation of BabaJS - javascript template engine 
  * @author <a href="mailto:harel.amir1@gmail.com">Amir Harel</a>
- * @version 1.0.2
+ * @version 1.0.3
  * @description check out full documentation at http://www.amirharel.com/2011/04/25/babajs/
  */
 var BabaJS = {
-	
+	_stack : {},
 	/**
 	 * @description generates an HTML from a given template. this method could be used in synch (retur value) or asynch (use callback) way.
 	 * @param {Object|String} obj could be a template string or a template object. in case the obj is a string then the method will return the generated HTML. 
@@ -577,7 +577,8 @@ var BabaJS = {
 			}
 		}
 		catch(err){
-			this._log("ERROR: ",err," Fn=_evalCodeTag ctag=",ctag," data=",data);
+			debugger;
+            this._log("ERROR: ",err," Fn=_evalCodeTag ctag=",ctag," data=",data);
 			throw err;
 		}
 		return res;
