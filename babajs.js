@@ -1,7 +1,7 @@
 /**
  * @fileOverview This is the implementation of BabaJS - javascript template engine 
  * @author <a href="mailto:harel.amir1@gmail.com">Amir Harel</a>
- * @version 1.0.3
+ * @version 1.0.4
  * @description check out full documentation at http://www.amirharel.com/2011/04/25/babajs/
  */
 var BabaJS = {
@@ -698,27 +698,140 @@ var BabaJS = {
 	 * @description finds all var in the code and put it in the vars array
 	 */
 	_findVars: function(res){
-		for( var id in res.ctags ){
-			res.ctags[id].vars = this._findVar(res.ctags[id].code);
+		for( var id in res.ctags ){			
+            res.ctags[id].vars = this._findVar(res.ctags[id].code);
 		}
 	},
+
+    /**
+     * check if a char is a white space
+     * @param c {String} one char
+     * @return {Boolean} true is this is a whitespace char
+     *@private
+     */
+    _isWhiteSpace: function(c){
+        return /[\s]/.test(c);
+    },
 	
 	/**
-	 * @private
+	 * finds all variable declerations in the code segment.
+     * @param code{String}
+     * @return {Array} array with all the variables defined in this code segment.
+     * @private
 	 */
 	_findVar: function(code){
-		var exp = /var ([^;]*)/g;
-		var match;
-		var res = [];
-		while((match = exp.exec(code))){
-			var v = match[1].replace( /\([^\)]*\)/g , "").split(","); //we remove everything inside () since its only function call.
-			for( var i=0; i<v.length; i++){
-				var newVar = v[i].split("=")[0];
-				newVar = newVar.replace(" ","").replace("\n","").replace("\r","").replace("\t","");
-				res.push(newVar);
-			}
-		}
-		return res;
+        var res = []; //return array with all variable found in the code.
+        var inDec = false; //are we inside of a decleration of variables
+        var newVar = ""; //new var
+        var pc = 0; // perenthasis count
+        var bc = 0; // bracket count
+        var inFn = false; //are we inside of a function - we ignore code if we do
+        var inStr = false; //are we inside of a string - we ignore the code if we do
+        var dqc = 0; //double qoute counter
+        var sqc = 0; //single quote counter
+        var inAssign = false; //are we in an assignment code for a variable
+        var inLoop = false; //are we inside of a loop. we need to know since you can define vars like 'for( var a in b )'
+        for( var i=0, len = code.length; i< len ; i++ ){ //main loop on the code segment.
+            var ch = code.charAt(i); //current char
+            if( ch == "("){
+                pc++;
+                //testing to see if we have "function("
+                if( !inFn && i>=8 && code.charAt(i-1) == "n" && code.charAt(i-2) == "o" && code.charAt(i-3) == "i" && code.charAt(i-4) == "t" && code.charAt(i-5) == "c" && code.charAt(i-6) == "n" && code.charAt(i-7) == "u" && code.charAt(i-8) == "f" ){
+                    inFn = true;
+                }
+                //testing to see if we have "for(" or "while("
+                if( !inLoop && !inFn && !inAssign &&
+                        ((i>=3 && code.charAt(i-1) == 'r' && code.charAt(i-2) == 'o' && code.charAt(i-3) == 'f' )||
+                        (i>=5 && code.charAt(i-1) == 'e' && code.charAt(i-2) == 'l' && code.charAt(i-3) == 'i' && code.charAt(i-4) == 'h' && code.charAt(i-5) == 'w'))){
+                    inLoop = true;
+
+                }
+            }
+            else if( ch == ")"){
+                pc--;
+                if( pc == 0 && !inFn && !inStr && inLoop ) inLoop = false; //checking to see if the loop was closed.
+				if( inFn && bc == 0 && pc == 0 ) inFn = false; //checking to see if a function was closed.
+            }
+            else if( ch == "{"){
+                bc++;
+            }
+            else if( ch == "}"){
+                bc--;
+                if( inFn && bc == 0 && pc == 0 ) inFn = false; //checking to see if a function was closed.
+            }
+            else if( ch == "\"" ){
+                dqc = dqc ? 0 : 1;
+            }
+             else if( ch == "\'" ){
+                sqc = sqc ? 0 : 1;
+            }
+            else if( ch == "=" && !inFn && inDec && !inStr ){ //checking to see if we are in an assignment for a variable
+                inAssign = true;
+				if( newVar ){
+                    res.push( newVar );
+                    newVar = "";
+                }
+                continue;
+            }
+            if( sqc || dqc ){ //checking to see if we are inside of a string
+                inStr = true;
+            }
+            else{
+                inStr = false;
+            }
+
+            if( inFn || inStr ) continue; //ignoring function and strings
+            if( !inLoop && pc) continue; // ignoring function parameters: someFunc(a,b);
+            
+            if( !inDec && ch == 'v' ){
+                //checking if we found a var decleration
+                if( (i == 0 && i < len-4 && code.charAt(i+1) == 'a' && code.charAt(i+2) == 'r' && this._isWhiteSpace(code.charAt(i+3)) ) ||
+                    ( (this._isWhiteSpace(code.charAt(i-1))|| code.charAt(i-1)== '{' || code.charAt(i-1)== '(') && i < len -4 && code.charAt(i+1) == 'a' && code.charAt(i+2) == 'r' && this._isWhiteSpace(code.charAt(i+3) )) ){
+
+                    inDec = true;
+                    i += 3;
+                }
+            }
+            else if( inDec ){ //if we already in a var decleration segment
+                if( ch == ","  ){
+                   if( newVar ){
+                    res.push( newVar );
+                    newVar = "";
+                   }
+                   inAssign = false;
+                }
+                else if( ch == ' ' && inLoop ){                    
+                    if( newVar ){
+                        res.push( newVar );
+                        newVar = "";
+                    }					
+                    if( i < len-3 && code.charAt(i+1) == 'i' && code.charAt(i+2) == 'n' && code.charAt(i+3) == ' '){
+                        var t=1;
+						inDec = false;
+                        inAssign = false;
+                    }
+                }
+                else if( ch == ';' ){
+                    if( newVar ){
+                        res.push( newVar );
+                        newVar = "";
+                    }
+                    inDec = false;
+                    inAssign = false;
+                }
+                else if( ch == 'i' && i<len-3 && code.charAt(i+1) == "n" && this._isWhiteSpace(code.charAt(i+2) ) ){
+                    if( newVar ){
+                        res.push( newVar );
+                        newVar = "";
+                    }
+                    inDec = false;
+                }
+                else if( !this._isWhiteSpace(ch) && !inAssign  ){
+                    newVar += ch;
+                }
+            }
+        }
+        return res;
 	},
 	
 	/**

@@ -19,3 +19,7 @@ Version 1.0.2
 Version 1.0.3
 -------------
 * fixed a bug with variable declerations. added the _stack decleration on the top of the library. 
+
+Version 1.0.4
+-------------
+* fixed a bug #2 - https://github.com/mrharel/babajs/issues/2 - loop breaks the template
