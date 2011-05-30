@@ -23,3 +23,9 @@ Version 1.0.3
 Version 1.0.4
 -------------
 * fixed a bug #2 - https://github.com/mrharel/babajs/issues/2 - loop breaks the template
+
+Version 1.0.5
+-------------
+* fixed a bug with the variable findder:
+	the following code broke the function:
+		var a = {b:c,d:e};

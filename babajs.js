@@ -1,7 +1,7 @@
 /**
  * @fileOverview This is the implementation of BabaJS - javascript template engine 
  * @author <a href="mailto:harel.amir1@gmail.com">Amir Harel</a>
- * @version 1.0.4
+ * @version 1.0.5
  * @description check out full documentation at http://www.amirharel.com/2011/04/25/babajs/
  */
 var BabaJS = {
@@ -724,7 +724,10 @@ var BabaJS = {
         var inDec = false; //are we inside of a decleration of variables
         var newVar = ""; //new var
         var pc = 0; // perenthasis count
-        var bc = 0; // bracket count
+        var bc = 0; // bracket  count
+        var abc = 0; //assign bc
+        var asc = 0;
+        var sc = 0; //square bracket count;
         var inFn = false; //are we inside of a function - we ignore code if we do
         var inStr = false; //are we inside of a string - we ignore the code if we do
         var dqc = 0; //double qoute counter
@@ -754,9 +757,19 @@ var BabaJS = {
             }
             else if( ch == "{"){
                 bc++;
+                if( inAssign ) abc++;
+            }
+            else if( ch == "["){
+                sc++;
+                if( inAssign ) asc++;
+            }
+            else if( ch == "]"){
+                sc--;
+                if( inAssign ) asc--;
             }
             else if( ch == "}"){
                 bc--;
+                if( inAssign ) abc--;
                 if( inFn && bc == 0 && pc == 0 ) inFn = false; //checking to see if a function was closed.
             }
             else if( ch == "\"" ){
@@ -793,7 +806,7 @@ var BabaJS = {
                 }
             }
             else if( inDec ){ //if we already in a var decleration segment
-                if( ch == ","  ){
+                if( ch == ","  && abc==0 && asc == 0  ){
                    if( newVar ){
                     res.push( newVar );
                     newVar = "";
