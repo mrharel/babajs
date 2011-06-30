@@ -29,3 +29,7 @@ Version 1.0.5
 * fixed a bug with the variable findder:
 	the following code broke the function:
 		var a = {b:c,d:e};
+		
+Version 1.0.6
+-------------
+removed debugger from code.

@@ -1,7 +1,7 @@
 /**
  * @fileOverview This is the implementation of BabaJS - javascript template engine 
  * @author <a href="mailto:harel.amir1@gmail.com">Amir Harel</a>
- * @version 1.0.5
+ * @version 1.0.6
  * @description check out full documentation at http://www.amirharel.com/2011/04/25/babajs/
  */
 var BabaJS = {
@@ -534,7 +534,6 @@ var BabaJS = {
 			}
 		}
 		catch(err){
-			debugger;
             this._log("ERROR: ",err," Fn=_evalConditionTag ctag=",ctag," data=",data);
 			throw err;
 		}
@@ -577,7 +576,6 @@ var BabaJS = {
 			}
 		}
 		catch(err){
-			debugger;
             this._log("ERROR: ",err," Fn=_evalCodeTag ctag=",ctag," data=",data);
 			throw err;
 		}
