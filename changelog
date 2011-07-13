@@ -33,3 +33,11 @@ Version 1.0.5
 Version 1.0.6
 -------------
 removed debugger from code.
+
+Version 1.0.7
+-------------
+Added a security flag for assign and code tags (i.e. <% and <%= ):
+the security flag tells BabaJS to escape the string according to the flag. s = low security which will escape <,>,",and ' 
+and S = high security which will escape <,>,&,",',`,,!,@,$,%,(,),[,],{,},=, and +
+
+Usage: all you need to do is to add the flag after the % sign like so: <%s return data.user_input%> or <%s= data.user_input> or <%S return data.user_input %>

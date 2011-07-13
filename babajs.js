@@ -579,9 +579,74 @@ var BabaJS = {
             this._log("ERROR: ",err," Fn=_evalCodeTag ctag=",ctag," data=",data);
 			throw err;
 		}
+        if( ctag.secure != 'none') return this._secureText(res,ctag.secure);
 		return res;
 		
 	},  
+    
+    /**
+     * Escape string according to the flag level
+     * 
+     * @param text {String} string to escape
+     * @param flag {String} 'low' or 'high' for different type of ecaping levels. 
+     *      low level will escape <,>,",and ' 
+     *      hight level will escape <,>,&,",',`,,!,@,$,%,(,),[,],{,},= and+
+     * @return {String} escaped string
+     */
+    secureText: function(text,flag){
+        flag = (typeof flag == "undefined") ? 'low' : flag;
+        return this._secureText(text,flag);
+    },
+    
+    /**
+     * @private
+     * Escape string according to the flag level. i wad inspired by Ryan Grove's post:'There's more to HTML escaping than &, <, >, and "' (http://wonko.com/post/html-escaping)
+     * 
+     * @param text {String} string to escape
+     * @param flag {String} 'low' or 'high' for different type of ecaping levels. 
+     *      low level will escape <,>,",and ' 
+     *      hight level will escape <,>,&,",',`,,!,@,$,%,(,),[,],{,},= and +
+     * @return {String} escaped string
+     * 
+     * 
+     */
+    _secureText: function(text,security){
+        var rx = {
+            "low" : /[\<\>\"\']/g ,
+            "high" : /[\<\>\&\"\'\`\,\!\@\$\%\(\)\[\]\{\}\=\+]/g
+        };
+
+        var that = this;
+        var replacer = function(str){
+            return that._escaped[str];
+        };
+        return text.replace( rx[security] , replacer );              
+        
+    },
+    /**
+     * escape special characters object. the key is the char and the value is the ecaped value.
+     * for more reference on Special Characters in HTML - http://www.degraeve.com/reference/specialcharacters.php     
+     */
+    _escaped: {
+        "\'": "&lsquo;" ,
+        "<" : "&lt;",
+        ">" : "&gt;" ,
+        "&" : "&amp;" ,
+        "\"": "&quot;" ,
+        "`" : "&#96;",
+        "," : "&#44;" , 
+        "!" : "&#33;" , 
+        "@" : "&#64;" , 
+        "$" : "&#36;" , 
+        "(" : "&#40;" , 
+        ")" : "&#41;" , 
+        "[" : "&#91;" , 
+        "]" : "&#93;" , 
+        "{" : "&#123;" , 
+        "}" : "&#125;",
+        "=" : "&#61;" ,
+        "+" : "&#61;"
+    },
 
 	/**
 	 * @description convert an object into a string. we try to use the browser implementation as a default. if there is no JSON
@@ -616,6 +681,7 @@ var BabaJS = {
 			c = t.charAt(i); //the current char
 			if( (c == "<") && ( i<len-1 && t.charAt(i+1) == "%" ) ){ //checking to see if we found an open ctag			
 				var ctagType = this._getCtagType(t,i+2); //getting the ctag type
+                var secureCode = this._getSecureCode(t,i+2);
 				currentTag = ctagType; //saving the current ctag type
 				if( ctagType == "code" || ctagType == "assign" || ctagType == "if" || ctagType == "loop" ){
 					//first we need to save the state for the current ctag
@@ -623,6 +689,7 @@ var BabaJS = {
 						res.ctags[q[q.length-1]]._state = state;
 					}					
 					var ctag = this._getNewCtag(ctagType); //creating a new ctag
+                    ctag.secure = secureCode;
 					q.push(count); //add it to the top of the queue
 					res.ctags[count] = ctag; //add it to the result object
 					this._addToCurrent(current,state,res, "_{" + count + "}_"); //add the ctag reference to the current working text.
@@ -632,7 +699,7 @@ var BabaJS = {
 				state = "tag"; //we are now looping over the ctag name
 			}
 			else if( state == "tag" ){
-				if( ctagType == "code" && c == "%" ){
+				if( ctagType == "code" && c == "%" && (t.charAt(i+1).toLowerCase() != 's' )){
 					state = "code"
 				}
 				else if( ctagType == "assign" && c == "=" ){
@@ -858,12 +925,31 @@ var BabaJS = {
 		}
 	},
 	
+    /**
+     * @private
+     * Gets the security level code     
+     */
+    _getSecureCode: function(t,i){
+        for( var j=i; j<i+10 && j< t.length-1 ; j++ ){
+            var ch = t.charAt(j);
+            if( ch == " " ) break;
+            if( (ch == 's' && t.charAt(j+1) == " ") || (ch == 's' && t.charAt(j+1) == "=") ){
+                return "low";
+            }
+            else if( (ch == 'S' && t.charAt(j+1) == " ") || (ch == 'S' && t.charAt(j+1) == "=") ){
+                return "high";
+            }
+        }
+        return "none";
+    },
+    
 	/**
 	 * @private
 	 * @description gets the current ctag type
 	 */
 	_getCtagType: function(t,i){
-		if( t.charAt(i) == "=" ) return "assign";
+		if(t.charAt(i).toLowerCase() == 's' ) i++;
+        if( t.charAt(i) == "=" ) return "assign";
 		if( t.charAt(i).toUpperCase() == "I" ) return "if";
 		if( t.charAt(i).toUpperCase() == "L" ) return "loop";
 		if( t.charAt(i).toUpperCase() == "E" ){
