@@ -41,3 +41,8 @@ the security flag tells BabaJS to escape the string according to the flag. s = l
 and S = high security which will escape <,>,&,",',`,,!,@,$,%,(,),[,],{,},=, and +
 
 Usage: all you need to do is to add the flag after the % sign like so: <%s return data.user_input%> or <%s= data.user_input> or <%S return data.user_input %>
+
+Version 1.0.8
+-------------
+Full support of flags and hooks. this removed the support of previous version of the format <%s - now it is <%f(s) code %>
+I'll add more documentation and examples in the readme file.

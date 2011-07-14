@@ -1,7 +1,7 @@
 /**
  * @fileOverview This is the implementation of BabaJS - javascript template engine 
  * @author <a href="mailto:harel.amir1@gmail.com">Amir Harel</a>
- * @version 1.0.7
+ * @version 1.0.8
  * @description check out full documentation at http://www.amirharel.com/2011/04/25/babajs/
  */
 var BabaJS = {
@@ -62,6 +62,7 @@ var BabaJS = {
 		if( cfg.fetcher ) this._cfg.fetcher = cfg.fetcher;
 		if( cfg.context ) this._cfg.context = cfg.context;
 		if( cfg.dep ) this._dep = cfg.dep;
+        if( cfg.flagCb ) this._cfg.flagCb = cfg.flagCb;
 	},
 	
 	/**
@@ -579,10 +580,38 @@ var BabaJS = {
             this._log("ERROR: ",err," Fn=_evalCodeTag ctag=",ctag," data=",data);
 			throw err;
 		}
-        if( ctag.secure != 'none') return this._secureText(res,ctag.secure);
+        
+        //checking to see if we have flags for this compiled tag
+        if( ctag.flags.length ){
+            if( this._cfg.flagCb ){ //checking to see if there is a callback hook
+                var cbRes = this._cfg.flagCb.call(this._cfg.context,res, ctag.flags);
+                if( typeof cbRes == "string" ){ //anything which is not a string is ignored.
+                    res = cbRes;
+                }
+                else{
+                    res = this._processPredefinedFlags(ctag.flags,res);
+                }
+            }
+            else{
+                res = this._processPredefinedFlags(ctag.flags,res);
+            }
+        }
 		return res;
 		
 	},  
+    
+    /**
+     * @private
+     * Predefined flags of BabaJS
+     * 
+     * @param flags {Array}
+     * @param res {string} the string to convert
+     */
+    _processPredefinedFlags: function(flags,res){
+        if( flags[0] == 's' ) return this._secureText(res,"low");
+        if( flags[0] == 'S' ) return this._secureText(res,"high");        
+        return res;        
+    },
     
     /**
      * Escape string according to the flag level
@@ -620,7 +649,7 @@ var BabaJS = {
         var replacer = function(str){
             return that._escaped[str];
         };
-        return text.replace( rx[security] , replacer );              
+        return text.replace( rx[security] , replacer );                      
         
     },
     /**
@@ -673,6 +702,8 @@ var BabaJS = {
 			ctags: {}
 		};
 		var c; //current char
+        var currentFlag = "";
+        var currentFlagType = null;
 		var current = "chtml"; //controller that tells us if we are working on a ctag or on the chtml from the res object.
 		var currentTag = null; //the current ctag type
 		var state = "html"; //if the current is the ctag id, we need to know on which part of the ctag we are working on right now.
@@ -681,7 +712,6 @@ var BabaJS = {
 			c = t.charAt(i); //the current char
 			if( (c == "<") && ( i<len-1 && t.charAt(i+1) == "%" ) ){ //checking to see if we found an open ctag			
 				var ctagType = this._getCtagType(t,i+2); //getting the ctag type
-                var secureCode = this._getSecureCode(t,i+2);
 				currentTag = ctagType; //saving the current ctag type
 				if( ctagType == "code" || ctagType == "assign" || ctagType == "if" || ctagType == "loop" ){
 					//first we need to save the state for the current ctag
@@ -689,7 +719,6 @@ var BabaJS = {
 						res.ctags[q[q.length-1]]._state = state;
 					}					
 					var ctag = this._getNewCtag(ctagType); //creating a new ctag
-                    ctag.secure = secureCode;
 					q.push(count); //add it to the top of the queue
 					res.ctags[count] = ctag; //add it to the result object
 					this._addToCurrent(current,state,res, "_{" + count + "}_"); //add the ctag reference to the current working text.
@@ -698,8 +727,57 @@ var BabaJS = {
 				}
 				state = "tag"; //we are now looping over the ctag name
 			}
-			else if( state == "tag" ){
-				if( ctagType == "code" && c == "%" && (t.charAt(i+1).toLowerCase() != 's' )){
+			else if( state == "flag" ){
+                if( c != "," && c != " " && c != "\"" && c != "\'" && c != ")" ){
+                    currentFlag += c;
+                    if( c == "." && currentFlagType == "number" ){
+                        currentFlagType = "float";
+                    }
+                    else if( c >= "0" && c <= "9" && currentFlagType !== "string" && currentFlagType !== "float"){
+                        currentFlagType = "number";
+                    }
+                    else{
+                        currentFlagType == "string"
+                    }
+                }
+                else if( c == "," || c == " " ){
+                    if( currentFlag.length ){
+                        var value = currentFlag;
+                        if( currentFlagType == "number" ) value = parseInt(currentFlag);
+                        if( currentFlagType == "float" ) value = parseFloat(currentFlag);
+                        ctag.flags.push(value);                                          
+                    }
+                    currentFlag = "";
+                    currentFlagType = null;     
+                }
+                else if( c== ")" ){
+                     if( currentFlag.length ){
+                        var value = currentFlag;
+                        if( currentFlagType == "number" ) value = parseInt(currentFlag);
+                        if( currentFlagType == "float" ) value = parseFloat(currentFlag);
+                        ctag.flags.push(value);                                          
+                    }
+                    currentFlag = "";
+                    currentFlagType = null;   
+                    
+                    if( t.charAt(i+1) == " " || t.charAt(i+1) == "="){
+                        state = "code";                        
+                        if( t.charAt(i+1) == "=" ){
+                            ctag.type = "assign";
+                            ctagType = "assign";
+                        }
+                        i++;
+                    }                    
+                }
+            }
+            else if( state == "tag" ){
+                if( (ctagType == "code" || ctagType == "assign") && c == "%"  && t.charAt(i+1) == 'f' ){
+                    state = "flag";
+                    i+= 2;    
+                    currentFlag = "";
+                    currentFlagType = null;
+                }
+                else if( ctagType == "code" && c == "%" && t.charAt(i+1).toLowerCase() != 's' && t.charAt(i+1) != 'f'){
 					state = "code"
 				}
 				else if( ctagType == "assign" && c == "=" ){
@@ -925,30 +1003,12 @@ var BabaJS = {
 		}
 	},
 	
-    /**
-     * @private
-     * Gets the security level code     
-     */
-    _getSecureCode: function(t,i){
-        for( var j=i; j<i+10 && j< t.length-1 ; j++ ){
-            var ch = t.charAt(j);
-            if( ch == " " ) break;
-            if( (ch == 's' && t.charAt(j+1) == " ") || (ch == 's' && t.charAt(j+1) == "=") ){
-                return "low";
-            }
-            else if( (ch == 'S' && t.charAt(j+1) == " ") || (ch == 'S' && t.charAt(j+1) == "=") ){
-                return "high";
-            }
-        }
-        return "none";
-    },
-    
+        
 	/**
 	 * @private
 	 * @description gets the current ctag type
 	 */
 	_getCtagType: function(t,i){
-		if(t.charAt(i).toLowerCase() == 's' ) i++;
         if( t.charAt(i) == "=" ) return "assign";
 		if( t.charAt(i).toUpperCase() == "I" ) return "if";
 		if( t.charAt(i).toUpperCase() == "L" ) return "loop";
@@ -976,7 +1036,8 @@ var BabaJS = {
 			code:"",
 			chtml1:"",
 			chtml2:"",
-			vars: []
+			vars: [],
+            flags: []
 		};
 	}
 
