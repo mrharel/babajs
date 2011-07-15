@@ -1,7 +1,7 @@
 /**
  * @fileOverview This is the implementation of BabaJS - javascript template engine 
  * @author <a href="mailto:harel.amir1@gmail.com">Amir Harel</a>
- * @version 1.0.8
+ * @version 1.0.9
  * @description check out full documentation at http://www.amirharel.com/2011/04/25/babajs/
  */
 var BabaJS = {
@@ -580,7 +580,7 @@ var BabaJS = {
             this._log("ERROR: ",err," Fn=_evalCodeTag ctag=",ctag," data=",data);
 			throw err;
 		}
-        
+		
         //checking to see if we have flags for this compiled tag
         if( ctag.flags.length ){
             if( this._cfg.flagCb ){ //checking to see if there is a callback hook
@@ -640,7 +640,8 @@ var BabaJS = {
      * 
      */
     _secureText: function(text,security){
-        var rx = {
+        if( !text ) return text;
+		var rx = {
             "low" : /[\<\>\"\']/g ,
             "high" : /[\<\>\&\"\'\`\,\!\@\$\%\(\)\[\]\{\}\=\+]/g
         };

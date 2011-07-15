@@ -46,3 +46,7 @@ Version 1.0.8
 -------------
 Full support of flags and hooks. this removed the support of previous version of the format <%s - now it is <%f(s) code %>
 I'll add more documentation and examples in the readme file.
+
+Version 1.0.9
+-------------
+_secureText: If text is null we return immidiatly.
