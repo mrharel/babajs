@@ -7,21 +7,21 @@ The basic concept is: Template + Data = HTML
   
 Here is a simple example:
 
-<!-- user template -->
-<div class="user">
-    <span><%=data.userName%></span>
-	<%IF data.hasPic %>
-	    <img src="<% return 'http://imgs.mydomain.com/'+ data.userPic; %>" />
-	<%ELSE%>
-	    <span>Add User Pic</span>
-	<%ENDIF%>
-	<span>User Friends:</span>
-	<% var myUserName = data.userName; %>
-	<%LOOP for( var i=0; i< data.friends.length; i++ ) %>
-	    <div class="friend">User <%=i%></div>
-		<% return this.includeTemplate("friend", window.getFriend( data.friends[i] ) ); %>
-	<%ENDLOOP%>
-</div>
+	<!-- user template -->
+	<div class="user">
+		<span><%=data.userName%></span>
+		<%IF data.hasPic %>
+			<img src="<% return 'http://imgs.mydomain.com/'+ data.userPic; %>" />
+		<%ELSE%>
+			<span>Add User Pic</span>
+		<%ENDIF%>
+		<span>User Friends:</span>
+		<% var myUserName = data.userName; %>
+		<%LOOP for( var i=0; i< data.friends.length; i++ ) %>
+			<div class="friend">User <%=i%></div>
+			<% return this.includeTemplate("friend", window.getFriend( data.friends[i] ) ); %>
+		<%ENDLOOP%>
+	</div>
 
 <!-- friend template -->
 <div class="friend"><%=myUserName%> is friend with <%=data.userName%></div>
