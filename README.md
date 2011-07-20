@@ -24,12 +24,13 @@ First we define an HTML template using the BabaJS special tags:
 		<%ENDLOOP%>
 	</div>
   
-In this example we call a sub-template from the main template so we define the *friend* template:
+In this example we call a sub-template from the main template so we define the **friend** template:
+  
 	<!-- friend HTML template -->
 	<div class="friend"><%=myUserName%> is friend with <%=data.userName%></div>
+    
+And lastly we need to provide BabaJS the **data** and call the main method: **generateHTML**:   
   
-And lastly we need to provide BabaJS the *data* and call the main method: *generateHTML*:   
-
 	BabaJS.generateHTML({
 		templateName:"user",
 		requires:["friend"], //defining the dependencies between the two templates. this is neccessary only if BabaJS needs to fetch the template prior the process.
@@ -43,18 +44,18 @@ And lastly we need to provide BabaJS the *data* and call the main method: *gener
 		friends:["amir","baba","daniel","mia","yael"]}
 	);
   
-In this example we used sub-templating and we used the asynch approach since we are not sure if the *friend* template is stored locally. If BabaJS can't find the *friend* template it will fetch it from a server which you specify and will continue with the process. Of course you can use the sub-templating using synch mode only if you are sure that the templates are already stored locally in BabaJS.     
+In this example we used sub-templating and we used the asynch approach since we are not sure if the **friend** template is stored locally. If BabaJS can't find the **friend** template it will fetch it from a server which you specify and will continue with the process. Of course you can use the sub-templating using synch mode only if you are sure that the templates are already stored locally in BabaJS.     
 It is also possible to use BabaJS in a simpler mode where you just provide the template as a string, like so:
 
 	var html = BabaJS.generateHTML("<div><%=data.userName%></div>",{userName:"me"});
 	document.getElementById("test").innerHTML = html;
 
 ## Main Features
-    * Sub Templating – you can include additional templates from other template as much as you like.
-    * Dependency Management – BabaJS keep track about dependencies between templates and  JS and CSS files to make sure all are loaded when needed.
-    * Fast – BabaJS compiles the templates in order to achive fast execution.
-    * Template Stack Variables – BabaJS allows you to define variables in the template tags and access them from anywhere in the template or from included templates.
-    * Text Based - BabaJS is doing text manipulation and doesn’t work on the DOM elements, thus allowing it to work on Node.JS as well.
-    * Template Manager – BabaJS is not only a template engine, but also a manager that provides API to add/remove and create dependencies between templates.
-
-To learn more about the API: http://www.amirharel.com/2011/04/26/babajs/
+* **PHP Like** &ndash; the syntaxt and the behavior of the template is similar to PHP so no need to learn something new. You can define variables in one template and use them anywhere in the templates or even in sub-templates.
+**Sub Templating** &ndash; you can call to render a template from another templates, so it makes it easier to devide templates into logic units, and use them where needed.
+* **Dependency Management** &ndash; you can tell BabaJS if a template has dependencies, like JS or CSS files, and BabaJS will fetch these dependencies before rendering the template, only if needed.
+* **Fast** &ndash; BabaJS compiles the templates in order to achive fast execution.
+* **Text Based** &ndash; BabaJS is doing text manipulation and doesn’t work on the DOM elements, thus allowing it to work on Node.JS as well.
+* **No Framework Dependencies** &ndash; you can use BabaJS with any framework you are already using, BabaJS is written using raw Javascript. 
+* **Formatting Flags** &ndash; you can specify formatting flags to control the way the final output of BabaJS is being formatted. BabaJS allows you to attach a hook to format the final output before it is passed back. BabaJS has some predefined flags to output secure HTML (i.e escaping some HTML tags). 
+  
