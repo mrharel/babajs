@@ -1,10 +1,10 @@
 # BabaJS - Javascript Template Manager
 
-What is BabaJS?
-BabaJS is an open source Javascript template engine/manager.
-
+## What is BabaJS?
+BabaJS is an open source Javascript template manager.
+  
 The basic concept is: Template + Data = HTML
-
+  
 Here is a simple example:
 
 <!-- user template -->
