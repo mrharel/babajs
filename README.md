@@ -97,3 +97,112 @@ Examples:
 	<%=this.includeTemplate("temp1"); %>
   
 Like the previous example, the only thing that was change here is that we removed the **return** keyword.  
+  
+### Condition Tag  
+**&lt;%IF JS expression %&gt;**  HTML **&lt;%ELSE%&gt;** HTML **&lt;%ENDIF%&gt;**  
+The condition tag allows you evaluate a javascript expression and to include a HTML and or template tags according to the expression value.  
+Example:
+
+	<%IF data.val == 1 %>
+		yes
+	<%ELSE%>
+		<%IF data.name=="amir" %>
+			hi amir
+		<%ENDIF%>
+		no
+	<%ENDIF%>
+  
+In this example we check the value of val in the data object and if its equal to 1 we output “yes” otherwise we output “hi amir” if the data.name is equal to amir and then we output “no”  
+  
+### Loop Tag   
+**&lt;%LOOP JS loop code %&gt;**  HTML **&lt;%ENDLOOP%&gt;**  
+The loop tag allows you to loop a certain HTML several times. The code section is expected to be a loop and there is not need to add the open brackets.  
+Example:  
+
+	<%LOOP for( var i=0; i<10; i++) %>
+		<span> value of i=<%=i%></span><br/>
+	<%ENDLOOP%>
+  
+## BabaJS API  
+Once you include BabaJS into your project you can access BabaJS using the global variable BabaJS. The following are the public methods you can access:  
+
+### generateHTML
+**generateHTML(obj,data)**  
+This method generate HTML using a given template and a data object.   
+The method can executed in two mode:  
+1. **synchronous** where the function return the HTML in the return value.  
+2. **asynchronous** where the function return the HTML in a callback function. 
+  
+If the synch mode is used, make sure that the template, and sub templates (if there are) is stored locally, and there is no CSS or JS dependencies that are not loaded already.  
+  
+**Params**:  
+  
+* **obj** {String|Object} this parameter can be either a String or an object. in case this is a string then it is the template string to be parsed, and the method is executed in the **synch** mode, which mean that the HTML will return in the return value of the function. If **obj** is an Object then the followings are a valid attributes:  
+ * **templateName** {String} a unique name for the templates. BabaJS stores the compiled templates and refer to them by this name.  
+ * **URLConvertor** {Function} a callback function to be used by the template manager to convert the templateName into a URL in case the template is not stored locally. The template manager will attempt to fetch the template from the server using the URL that you will provide. The callback function gets the templateName in the parameter and should return the template URL as a string. This callback function is required if you don’t provide a **fetcher**. You can also set this callback in the **setConfig** method to be global callback for all templates. In case you set a callback in the generateHTML and also set a global callback in the **setConfig**, then the local callabck will be used.  
+ * **fetcher** {Function} callback function that allows you to control the fetching of templates that are not stored locally by BabaJS. Provide this callback if you want to fetch templates for the template manager when it needs it. The callback gets as the first parameter the template name, and the second parameter is a callback function to be called when the template is ready. the callback parameter gets the template as a string in the first parameter. To indicate that you failed to fetch the template return **false** to the callback method. You can also set this callback in the **setConfig** method to be global callback for all templates. In case you set a callback in the **generateHTML** and also set a global callback in the **setConfig**, then the local callabck will be used.  
+ * **context** {Object} set the callback function context (both for **URLConvertor** and **fetcher**). This is optional and if no context is set, the window object will be set as the default context of callbacks. You can also set this object in the **setConfig** method to be global context for all callbacks. In case you set a context in the **generateHTML** and also set a global context in the **setConfig**, then the local context will be used. 
+ * **ready** {Function} callback function when the HTML is ready. the callback will get in the first parameter the genrated HTML, and the second parameter is the template name that was requested. If this callback is not provided then the template manager assume that the generateHTML was called in the **synch** mode and will try to return the HTML in the return value (this will be possible only if everything is already stored locally by the template manager)
+ * **requires** {Array|Object} the template manager knows how to handle dependencies. if a template is depended on another template BabaJS will make sure it has it locally. The template manager also support javascript and CSS dependencies, so if a template is depended on a CSS file, the template manager will make sure the CSS is loaded before generating the HTML. The requires attribute could be either an array of template names, or an object with the following attributes:
+     * **templates** {Array} array of templates name that are required in this template.
+     * **js** {Array} array of javascript files that this templates depended on.
+     * **css** {Array} array of CSS files that this template depends on.
+* **data** {Any} the data object that the template manager will pass to the code of the template tags. you can access the data object by using the **data** keyword inside javascript code.	 
+  
+Examples:  
+  
+This is a synch use of generateHTML by providing the template as a string.  
+  
+	var html = BabaJS.generateHTML("<%=data.name%>",{name:"amir"});
+	alert(html); //will output "amir"
+  
+In this example we didn't provide the "ready" callback, the method will be executed in a **synch** mode and will try to generate and return the HTML in the return value.  
+this will work only if "temp1" is stored locally and all its dependencies are loaded already.
+  
+	var html = BabaJS.generateHTML({templateName:"temp1"},{name:"amir"});
+  	
+In this example we provide a template name and a convertor callback to return a URL of the template. we also provide a "ready" callback to be used when the HTML is ready.  
+Tthis will force the generateHTML to be used in an **asynch** mode.
+  
+	function onHTMLReady(html,templateName){
+		switch( templateName ){
+			case "user-page": loadUserPage(html); break;
+			case "msg-page" : loadMessagePage(html); break;
+		}
+	}
+
+	function URLConvertor(templateName){
+		return templateName+".html";
+	}
+	//BabaJS will check to see if it has the template temp1 and if not will try to fetch it using XMLHTTPRequest using the URL that was provided
+	BabaJS.generateHTML(
+		{templateName:"temp1",
+		URLConvertor:URLConvertor,
+		ready: onHTMLReady,
+		 },{name:"amir"});
+
+  
+In this example we provided a fetcher method to handle the fetching of the templates by ourselves. this is useful if you already fetched the template or want to fetch several templates in a batch.  
+we also provided a dependency between "temp1" to "temp2" and "temp3" which wil tell BabaJS to make sure it has these templates locally before generating the HTML.
+  
+	function fetchTemplate(templateName,cb){
+		$.ajax( URLConvertor(templateName) , {success:function(data){cb(data);}});
+	}
+
+	BabaJS.generateHTML(
+		{templateName:"temp1",
+		fetcher: fetchTemplate,
+		requires: ["temp2","temp3"],
+		ready: onHTMLReady,
+		},{name:"amir"});
+  
+
+In this example we extended the dependencies to add CSS and javascript library for this template. BabaJs will load these files, if they are not already loaded, and make sure they are added to the head tag of the document.
+
+	BabaJS.generateHTML(
+		{templateName:"temp1",
+		fetcher: fetchTemplate,
+		requires: {templates:["temp2"],css:["styles/style1.css"],js:["scripts/jquery.js"]},
+		ready: onHTMLReady,
+		},{name:"amir"});
+  
