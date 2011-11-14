@@ -484,7 +484,10 @@ var BabaJS = {
 
 		try{
 			var fn = new Function("data","ctags", fnBody);
-			var res = fn.call(this,data,ctags);			
+			var res = fn.call(this,data,ctags);
+			if( typeof res == "string" ){
+                		res = res.replace(/[\$]/g,"&#36;");
+            		}
 		}
 		catch(err){
 	            this._log("ERROR: ", err," Fn=_evalLoopTag ctag=",ctag," data=",data);
@@ -575,6 +578,13 @@ var BabaJS = {
 			if( typeof res === 'undefined' ){
 				res = "";
 			}
+			if( res instanceof Error ){
+                		this._log("BabaJS Error: ",res.message,res.href,res.lineNo,res.source);
+                		return res.message;
+            		}
+            		if( typeof res == "string" ){
+                		res = res.replace(/[\$]/g,"&#36;"); //$ sign needs to be replaced with the special char to fix a replace bug
+            		}
 		}
 		catch(err){
             this._log("ERROR: ",err," Fn=_evalCodeTag ctag=",ctag," data=",data);
