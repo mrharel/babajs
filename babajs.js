@@ -46,9 +46,9 @@ var BabaJS = {
 	 * @description config params for the template manager.
 	 * @property {Function} fetcher callback function to be used in order to fetch templates when they are not stored locally.
 	 * @property {Function} URLConvertor callback to be used in order to convert a template name into a URL
-	 * @property {Object} context the context of the above callback functions. the default is the window. 
+	 * @property {Object} context the context of the above callback functions. the default is this. 
 	 */
-	_cfg: {fetcher:null,URLConvertor:null,context: window},
+	_cfg: {fetcher:null,URLConvertor:null,context: this},
 	
 	/**
 	 * @description set global config for the template manager. The template manager will try to use these settings in case they are not provided in the generateHTL method.
@@ -146,11 +146,11 @@ var BabaJS = {
 	 */
 	_ajax: function(url,cb,context){
 		var xhr;
-		if( window.ActiveXObject ){
-			xhr = new window.ActiveXObject( "Microsoft.XMLHTTP" ); 
+		if( typeof ActiveXObject !== "undefined" ){
+			xhr = new ActiveXObject( "Microsoft.XMLHTTP" ); 
 		}
-		else{
-			xhr = new window.XMLHttpRequest();
+		else if(typeof XMLHttpRequest !== "undefined" ){
+			xhr = new XMLHttpRequest();
 		}
 		xhr.open("GET",url);
 		xhr.onreadystatechange = function(){
@@ -497,7 +497,7 @@ var BabaJS = {
 	},
 
     _log: function(){
-        if( window.console ){
+        if( typeof console !== "undefined" ){
             console.log.apply(console,arguments);
         }
     },
@@ -693,7 +693,7 @@ var BabaJS = {
 	 * object we throw an error only if the obj is either an Object or an Array.
 	 */ 
     	_stringify: function(obj){
-        	if( window.JSON ) return JSON.stringify(obj);
+        	if( typeof JSON !== "undefined" ) return JSON.stringify(obj);
 	        if( typeof obj == "string" || typeof obj == "number" || typeof obj == "boolean" ) return obj.toString();
 	        throw new Error("Can't stringify an Object or an Array without JSON Support. please include a JSON object to the window object. Try https://github.com/douglascrockford/JSON-js");
 	},
@@ -1053,3 +1053,7 @@ var BabaJS = {
 	}
 
 };
+
+if( typeof module !== "undefined" && module.exports ){
+    module.exports = BabaJS;
+}
