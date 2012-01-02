@@ -1,7 +1,7 @@
 /**
  * @fileOverview This is the implementation of BabaJS - javascript template engine 
  * @author <a href="mailto:harel.amir1@gmail.com">Amir Harel</a>
- * @version 1.0.10
+ * @version 1.1.0
  * @description check out full documentation at https://github.com/mrharel/babajs/
  */
 var BabaJS = {
