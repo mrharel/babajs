@@ -54,3 +54,7 @@ _secureText: If text is null we return immidiatly.
 Version 1.0.10
 --------------
 fixed a bug when the text has a $ sign in it, it creates an endless loop in the replace methods. 
+
+Version 1.1.0
+-------------
+No big changes in the functionality but small changes that make BabaJS run on Node.JS. 
