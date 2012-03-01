@@ -3,6 +3,7 @@
  * @author <a href="mailto:harel.amir1@gmail.com">Amir Harel</a>
  * @version 1.1.0
  * @description check out full documentation at https://github.com/mrharel/babajs/
+ * BabaJS is released under the MIT License <http://www.opensource.org/licenses/mit-license.php> 
  */
 var BabaJS = {
 	_stack : {},
