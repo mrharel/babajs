@@ -231,7 +231,7 @@ This method populate the template manager with templates and load any javascript
 **Examples**:  
 in this example we make sure t1,t2,t3 are loaded along with some javascript and css files that required for this templates. when the template manager load all the files we call the generateHTML in the synch mode since we know that all the resources are stored locally.  
 
-	BabaJS.ensuureLocal(["t1","t2","t3"],["jquery.js","page1.js"],["style1.css"], function(){
+	BabaJS.ensureLocal(["t1","t2","t3"],["jquery.js","page1.js"],["style1.css"], function(){
 		var html = BabaJS.generateHTML({templateName:"t1"},{name:"amir"});
 	});  
   
