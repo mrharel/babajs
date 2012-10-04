@@ -58,3 +58,8 @@ fixed a bug when the text has a $ sign in it, it creates an endless loop in the 
 Version 1.1.0
 -------------
 No big changes in the functionality but small changes that make BabaJS run on Node.JS. 
+
+Version 1.1.1
+-------------
+Supporting the caching of templates. this affects the ensureLocal method, so it won't
+load templates it already have. 

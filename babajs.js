@@ -7,6 +7,8 @@
  */
 var BabaJS = {
 	_stack : {},
+        _cacheTemplates : false,
+        _cache : {},
 	/**
 	 * @description generates an HTML from a given template. this method could be used in synch (return value) or asynch (use callback) way.
 	 * @param {Object|String} obj could be a template string or a template object. in case the obj is a string then the method will return the generated HTML. 
@@ -56,14 +58,16 @@ var BabaJS = {
 	 * @param {Object} cfg can contains the followings:
 	 * 		fetcher {Function}
 	 * 		URLConvertor {Function}
+         * 		cacheTemplates {Boolean}
 	 * 		context {Object}
 	 */
 	setConfig: function(cfg){
-		if( cfg.URLConvertor ) this._cfg.URLConvertor = cfg.URLConvertor;
-		if( cfg.fetcher ) this._cfg.fetcher = cfg.fetcher;
-		if( cfg.context ) this._cfg.context = cfg.context;
-		if( cfg.dep ) this._dep = cfg.dep;
-        if( cfg.flagCb ) this._cfg.flagCb = cfg.flagCb;
+            if( cfg.URLConvertor ) this._cfg.URLConvertor = cfg.URLConvertor;
+            if( cfg.fetcher ) this._cfg.fetcher = cfg.fetcher;
+            if( cfg.context ) this._cfg.context = cfg.context;
+            if( cfg.dep ) this._dep = cfg.dep;
+            this._cacheTemplates = cfg.cacheTemplates;
+            if( cfg.flagCb ) this._cfg.flagCb = cfg.flagCb;
 	},
 	
 	/**
@@ -124,14 +128,16 @@ var BabaJS = {
 		if( fetcher ){
 			var that = this;
 			fetcher.call(cbContext,name,function(text){
-				that._templates[name] = {compiled: that._compile(text)};
+				that._cache[name] = true;
+                                that._templates[name] = {compiled: that._compile(text)};
 				cb.call(context,true);
 			});
 		}
 		else{
 			this._ajax(url, function(text){
 				if( text !== false ){
-					this._templates[name] = {compiled: this._compile(text)};
+                                        this._cache[name] = true;
+                                        this._templates[name] = {compiled: this._compile(text)};
 					cb.call(context,true);
 				}
 				else{
@@ -184,6 +190,16 @@ var BabaJS = {
 				cb.call(this._cfg.context,success);
 			},this);	
 	},
+        
+        _getNonCachedTemplates: function(arr){
+            var nonCached = [];
+            for( var i=0; i<arr.length; i++ ){
+                if( !this._cache[arr[i]] ){
+                    nonCached.push(arr[i]);
+                }
+            }
+            return nonCached;
+        },
 	
 	
 	/**
@@ -191,44 +207,45 @@ var BabaJS = {
 	 * @description fetches the templates/js/css files.
 	 */
 	_ensureLocal: function( obj,tempArr,jsArr,cssArr,cb,context ){
-		jsArr = jsArr ? jsArr : [];
-		cssArr = cssArr ? cssArr : [];
-		var counter = 0;
-		var convertor = obj.URLConvertor ? obj.URLConvertor : this._cfg.URLConvertor;
-		var cbContext = obj.context ? obj.context : this._cfg.context;
-		var totalCount = tempArr.length + cssArr.length + jsArr.length;
-        if( totalCount == 0 ){
-            cb.call(context,true);
-        }
-        for( var i=0; i<tempArr.length; i++ ){
-			var url = convertor ? convertor.call(cbContext,tempArr[i]) : "";
-			this._fetchTemplate(obj,tempArr[i],url,function(success){
-				if( success === false ){
-					throw new Error("Failed to fetch template" + url );
-					return;
-				}
-				counter++;
-				if( counter == totalCount ){
-					cb.call(context,true);
-				}
-			},this);		
-		}
-		for( var i=0; i<jsArr.length; i++){
-			this._fetchJS(jsArr[i],function(success){
-				counter++;
-				if( counter == totalCount ){
-					cb.call(context,true);
-				}
-			},this);
-		}
-		for( var i=0; i<cssArr.length; i++){
-			this._fetchCSS(cssArr[i],function(success){
-				counter++;
-				if( counter == totalCount ){
-					cb.call(context,true);
-				}
-			},this);
-		}
+            jsArr = jsArr ? jsArr : [];
+            cssArr = cssArr ? cssArr : [];
+            var counter = 0;
+            tempArr = this._getNonCachedTemplates(tempArr);
+            var convertor = obj.URLConvertor ? obj.URLConvertor : this._cfg.URLConvertor;
+            var cbContext = obj.context ? obj.context : this._cfg.context;
+            var totalCount = tempArr.length + cssArr.length + jsArr.length;
+            if( totalCount == 0 ){
+                cb.call(context,true);
+            }
+            for( var i=0; i<tempArr.length; i++ ){
+                var url = convertor ? convertor.call(cbContext,tempArr[i]) : "";
+                this._fetchTemplate(obj,tempArr[i],url,function(success){
+                    if( success === false ){
+                        throw new Error("Failed to fetch template" + url );
+                        return;
+                    }
+                    counter++;
+                    if( counter == totalCount ){
+                        cb.call(context,true);
+                    }
+                },this);		
+            }
+            for( var i=0; i<jsArr.length; i++){
+                this._fetchJS(jsArr[i],function(success){
+                    counter++;
+                    if( counter == totalCount ){
+                        cb.call(context,true);
+                    }
+                },this);
+            }
+            for( var i=0; i<cssArr.length; i++){
+                this._fetchCSS(cssArr[i],function(success){
+                    counter++;
+                    if( counter == totalCount ){
+                        cb.call(context,true);
+                    }
+                },this);
+            }
 	},
 	
 	/**
@@ -399,10 +416,9 @@ var BabaJS = {
 	 * @param {Object} templates associative array with key=template name and value= template text.
 	 */
 	addTemplates: function(templates){
-		for( var name in templates ){
-			var compiled = this._compile(templates[name]);
-			this._templates[name] = {compiled:compiled};			
-		}
+            for( var name in templates ){
+                this.addTemplate(name, templates[name]);		
+            }
 	},
 
     	/**
@@ -411,9 +427,12 @@ var BabaJS = {
 	 * @param {String} text the template string
 	 */
 	addTemplate: function(templateName,text){
-        	if( this._templates[templateName] ) return;
+            if( this._templates[templateName] ) return;
             var compiled = this._compile(text);
             this._templates[templateName] = {compiled:compiled};
+            if( this._cacheTemplates ){
+                this._cache[templateName] = true;
+            }
     	},
 	
 	
@@ -448,10 +467,10 @@ var BabaJS = {
 	_evalCtag: function(ctags,ctagid,data){
 		var ctag = ctags[ctagid];
 		switch( ctag.type ){
-			case "code" : return this._evalCodeTag(data,ctag);
-			case "assign" : return this._evalCodeTag(data,ctag,true);
-			case "if" : return this._evalConditionTag(data,ctags,ctag);
-			case "loop" : return this._evalLoopTag(data,ctags,ctag);
+			case "code" :return this._evalCodeTag(data,ctag);
+			case "assign" :return this._evalCodeTag(data,ctag,true);
+			case "if" :return this._evalConditionTag(data,ctags,ctag);
+			case "loop" :return this._evalLoopTag(data,ctags,ctag);
 			default:
 				return "Unknown tag";
 		}
