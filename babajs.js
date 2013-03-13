@@ -434,6 +434,33 @@ var BabaJS = {
                 this._cache[templateName] = true;
             }
     	},
+    	
+    	/**
+     	* get a template object to be used without the need of BabaJS.
+     	* This is used to support RequireJS and the BabaJS requirejs plugin where
+     	* you can set a template as a dependency and get the template object.
+     	* @param templateName
+     	* @returns {Object}
+     	* <pre>
+     	*     toString {Function} if the template just needed to be used as simple HTML snippet
+     	*     compile {Function} get one paraneter which is the data to be passed to the template and return
+     	*      the compiled HTML string.
+     	* </pre>
+     	*/
+    	getTemplateObj: function(templateName){
+            if( !this._templates[templateName] ) return null;
+            return {
+                _tplObj : this._templates[templateName],
+                _babajs : this,
+                _tplName : templateName,
+                toString: function(){
+                    return this._compile();
+                },
+                compile: function(data){
+                    return this._babajs.includeTemplate(this._tplName,data);
+                }
+            };
+        },
 	
 	
 	/**
