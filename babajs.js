@@ -454,7 +454,7 @@ var BabaJS = {
                 _babajs : this,
                 _tplName : templateName,
                 toString: function(){
-                    return this._compile();
+                    return this.compile();
                 },
                 compile: function(data){
                     return this._babajs.includeTemplate(this._tplName,data);
